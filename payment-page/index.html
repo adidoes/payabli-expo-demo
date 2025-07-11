@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <title>Payabli Integration</title>
+    <style>
+      .hidden {
+        display: none;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background-color: #ffffff;
+      }
+
+      #pay-component-1 {
+        width: 100%;
+        max-width: 480px;
+        margin-bottom: 24px;
+      }
+
+      #submit-btn {
+        background: #4f46e5;
+        color: white;
+        padding: 16px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        width: 100%;
+        max-width: 480px;
+        transition: background-color 0.2s ease;
+        touch-action: manipulation;
+      }
+
+      #submit-btn:hover:not(:disabled) {
+        background: #4338ca;
+      }
+
+      #submit-btn:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+
+      @media (max-width: 480px) {
+        body {
+          padding: 12px;
+        }
+
+        #submit-btn {
+          padding: 14px 20px;
+          font-size: 15px;
+        }
+      }
+
+      @media (max-width: 320px) {
+        body {
+          padding: 8px;
+        }
+
+        #submit-btn {
+          padding: 12px 16px;
+          font-size: 14px;
+        }
+      }
+
+      @media (min-width: 768px) {
+        body {
+          padding: 32px;
+        }
+
+        #pay-component-1 {
+          max-width: 600px;
+        }
+
+        #submit-btn {
+          max-width: 600px;
+          padding: 18px 32px;
+          font-size: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="pay-component-1"></div>
+    <button id="submit-btn" disabled>Process Payment</button>
+
+    <script
+      src="https://embedded-component-sandbox.payabli.com/component.js"
+      data-test
+    ></script>
+    <script>
+      const payabliConfig = {
+        type: "methodEmbedded",
+        rootContainer: "pay-component-1",
+        token:
+          "o.z8j8aaztW9tUtUg4dlVeYAx+L2MazOFGr0DY8yuK3u79MCYlGK4/q0t5AD1UgLAjXOohnxN8VTZfPswyZcwtChGNn1a8jFMmYWHmLN2cPDW9IrBt1RtrSuu+85HJI+4kML5sIk9SYvULDAU2k0X0E1KFYcPwjmmkUjktrEGtz48XCUM70aKUupkrTh8nL7CXpAXATzVUZ2gEld9jGINwECPPLWmu+cZ4CJb7QMJxnzKFD073+nq/eL+pMth7+u/SkmAWC0+jn8y+Lf6T5Q5PqB6wN7Mvosp8g7U7lbEW2wC0DA92pjblfDHVJOQUkjgT7B1GvryMokLvBjoiaLhKa55iKZE1YDlyqruILkoNF+zGSPS9r17qU6w4ziKhoMdSPzPBJBlLhQhz3MVANXbjfEfJwmtr/JJ1uStUfBFJ710cS1x7goxMJO/cl+q+LVtPy788EKFkgMc5OjfBNCsNL+dBDVbK5CiIJUSbOFzdqdjY/VJ14MEodsHYOwMAjuF4.KRFMeEj0SOur8MLZ362c/UZ/U/Az3CSUkr3/8EVDE6Y=",
+        entryPoint: "bozeman-aikido",
+        defaultOpen: "card",
+        temporaryToken: false,
+        card: {
+          enabled: true,
+          amex: true,
+          discover: true,
+          visa: true,
+          mastercard: true,
+          jcb: true,
+          diners: true,
+          inputs: {
+            cardHolderName: {
+              label: "NAME ON CARD",
+              size: 12,
+              row: 0,
+              order: 0,
+            },
+            cardNumber: {
+              label: "CARD NUMBER",
+              size: 6,
+              row: 1,
+              order: 0,
+            },
+            cardExpirationDate: {
+              label: "EXPIRATION",
+              size: 6,
+              row: 1,
+              order: 1,
+            },
+            cardCvv: {
+              label: "CVV",
+              size: 6,
+              row: 2,
+              order: 0,
+            },
+            cardZipcode: {
+              label: "ZIP CODE",
+              size: 6,
+              row: 2,
+              order: 1,
+            },
+          },
+        },
+        functionCallBackSuccess: function (response) {
+          console.log(response);
+          let message = {};
+
+          switch (response.responseText) {
+            case "Success":
+              message = {
+                status: "success",
+                message: `Payment successful: ${response.responseData.resultText}`,
+                transactionId: response.responseData.transactionId || "N/A",
+                responseData: response.responseData,
+              };
+              break;
+            case "Declined":
+              message = {
+                status: "error",
+                message: `Payment declined: ${response.responseData.resultText}`,
+                responseData: response.responseData,
+              };
+              paycomponent0.payabliExec("reinit");
+              break;
+            default:
+              message = {
+                status: "error",
+                message: `Payment error: ${response.responseText}`,
+                responseData: response.responseData,
+              };
+              paycomponent0.payabliExec("reinit");
+              break;
+          }
+
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(message));
+          }
+        },
+        functionCallBackError: function (errors) {
+          console.log("Payment error:", errors);
+          const message = {
+            status: "error",
+            message: "Payment processing error occurred",
+            errors: errors,
+          };
+
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(message));
+          }
+
+          payComponent.payabliExec("reinit");
+        },
+        functionCallBackReady: function (data) {
+          const btn = document.getElementById("submit-btn");
+          if (data[1] === true) {
+            btn.disabled = false;
+          } else {
+            btn.disabled = true;
+          }
+        },
+      };
+
+      // Initialize the Payabli component
+      const payComponent = new PayabliComponent(payabliConfig);
+
+      // Handle payment execution
+      document
+        .getElementById("submit-btn")
+        .addEventListener("click", function () {
+          payComponent.payabliExec("pay", {
+            paymentDetails: {
+              totalAmount: 100.0,
+              serviceFee: 0,
+              categories: [
+                {
+                  label: "payment",
+                  amount: 100.0,
+                  qty: 1,
+                },
+              ],
+            },
+            customerData: {
+              firstName: "John",
+              lastName: "Doe",
+              billingEmail: "john.doe@example.com",
+            },
+          });
+        });
+    </script>
+  </body>
+</html>
