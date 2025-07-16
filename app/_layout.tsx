@@ -9,7 +9,33 @@ import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 
+import PaymentSheet from "@/components/PaymentSheet";
+import {
+  PaymentSheetProvider,
+  usePaymentSheet,
+} from "@/contexts/PaymentSheetContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+
+function AppContent() {
+  const { isVisible, hidePaymentSheet, onPaymentSuccess, onPaymentError } =
+    usePaymentSheet();
+
+  return (
+    <>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style="auto" />
+      <PaymentSheet
+        isVisible={isVisible}
+        onClose={hidePaymentSheet}
+        onPaymentSuccess={onPaymentSuccess}
+        onPaymentError={onPaymentError}
+      />
+    </>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -24,11 +50,9 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
+        <PaymentSheetProvider>
+          <AppContent />
+        </PaymentSheetProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

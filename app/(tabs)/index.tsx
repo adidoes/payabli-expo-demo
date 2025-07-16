@@ -1,67 +1,18 @@
 import { Image } from "expo-image";
-import React, { useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
+import React from "react";
+import { FlatList, StyleSheet, TouchableOpacity } from "react-native";
 
 import ParallaxScrollView from "@/components/ParallaxScrollView";
-import PaymentSheet, { PaymentSheetRef } from "@/components/PaymentSheet";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
-
-interface PaymentMessage {
-  id: string;
-  timestamp: Date;
-  type: "success" | "error" | "info";
-  message: string;
-  data?: any;
-}
+import { usePaymentSheet } from "@/contexts/PaymentSheetContext";
 
 export default function HomeScreen() {
-  const [isPaymentSheetVisible, setIsPaymentSheetVisible] = useState(false);
-  const [paymentMessages, setPaymentMessages] = useState<PaymentMessage[]>([]);
-  const paymentSheetRef = useRef<PaymentSheetRef>(null);
-
-  const addPaymentMessage = (
-    type: "success" | "error" | "info",
-    message: string,
-    data?: any
-  ) => {
-    const newMessage: PaymentMessage = {
-      id: Date.now().toString(),
-      timestamp: new Date(),
-      type,
-      message,
-      data,
-    };
-    setPaymentMessages((prev) => [newMessage, ...prev]);
-  };
+  const { paymentMessages, showPaymentSheet, clearMessages } =
+    usePaymentSheet();
 
   const handlePayNowPress = () => {
-    addPaymentMessage("info", "Opening payment sheet...");
-    setIsPaymentSheetVisible(true);
-  };
-
-  const handlePaymentClose = () => {
-    addPaymentMessage("info", "Payment sheet closed");
-    setIsPaymentSheetVisible(false);
-  };
-
-  const handlePaymentSuccess = (data: any) => {
-    addPaymentMessage("success", data.message || "Payment successful!", data);
-    Alert.alert(
-      "Payment Successful!",
-      `Transaction ID: ${data.transactionId || "N/A"}`,
-      [{ text: "OK" }]
-    );
-    setIsPaymentSheetVisible(false);
-  };
-
-  const handlePaymentError = (error: string) => {
-    addPaymentMessage("error", error);
-    Alert.alert("Payment Failed", error, [{ text: "OK" }]);
-  };
-
-  const clearMessages = () => {
-    setPaymentMessages([]);
+    showPaymentSheet();
   };
 
   const formatTime = (date: Date) => {
@@ -95,90 +46,74 @@ export default function HomeScreen() {
   };
 
   return (
-    <>
-      <ParallaxScrollView
-        headerBackgroundColor={{ light: "#008BCD", dark: "#1D3D47" }}
-        headerImage={
-          <Image
-            source={require("@/assets/images/payabli-fav.png")}
-            style={styles.logo}
-          />
-        }
-      >
-        <ThemedView style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.payButton}
-            onPress={handlePayNowPress}
-          >
-            <ThemedText style={styles.buttonText}>Pay Now</ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
+    <ParallaxScrollView
+      headerBackgroundColor={{ light: "#008BCD", dark: "#1D3D47" }}
+      headerImage={
+        <Image
+          source={require("@/assets/images/payabli-fav.png")}
+          style={styles.logo}
+        />
+      }
+    >
+      <ThemedView style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.payButton} onPress={handlePayNowPress}>
+          <ThemedText style={styles.buttonText}>Pay Now</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
 
-        <ThemedView style={styles.logContainer}>
-          <ThemedView style={styles.logHeader}>
-            <ThemedText style={styles.logTitle}>Payment Messages</ThemedText>
-            {paymentMessages.length > 0 && (
-              <TouchableOpacity
-                onPress={clearMessages}
-                style={styles.clearButton}
-              >
-                <ThemedText style={styles.clearButtonText}>Clear</ThemedText>
-              </TouchableOpacity>
-            )}
-          </ThemedView>
-
-          {paymentMessages.length === 0 ? (
-            <ThemedView style={styles.emptyState}>
-              <ThemedText style={styles.emptyStateText}>
-                No payment messages yet. Tap &quot;Pay Now&quot; to start.
-              </ThemedText>
-            </ThemedView>
-          ) : (
-            <ScrollView
-              style={styles.messagesList}
-              showsVerticalScrollIndicator={false}
+      <ThemedView style={styles.logContainer}>
+        <ThemedView style={styles.logHeader}>
+          <ThemedText style={styles.logTitle}>Payment Messages</ThemedText>
+          {paymentMessages.length > 0 && (
+            <TouchableOpacity
+              onPress={clearMessages}
+              style={styles.clearButton}
             >
-              {paymentMessages.map((msg) => (
-                <ThemedView
-                  key={msg.id}
-                  style={[styles.messageItem, getMessageStyle(msg.type)]}
-                >
-                  <ThemedView style={styles.messageHeader}>
-                    <ThemedText
-                      style={[
-                        styles.messageType,
-                        getMessageTypeStyle(msg.type),
-                      ]}
-                    >
-                      {msg.type.toUpperCase()}
-                    </ThemedText>
-                    <ThemedText style={styles.messageTime}>
-                      {formatTime(msg.timestamp)}
-                    </ThemedText>
-                  </ThemedView>
-                  <ThemedText style={styles.messageText}>
-                    {msg.message}
-                  </ThemedText>
-                  {msg.data && (
-                    <ThemedText style={styles.messageData}>
-                      {JSON.stringify(msg.data, null, 2)}
-                    </ThemedText>
-                  )}
-                </ThemedView>
-              ))}
-            </ScrollView>
+              <ThemedText style={styles.clearButtonText}>Clear</ThemedText>
+            </TouchableOpacity>
           )}
         </ThemedView>
-      </ParallaxScrollView>
 
-      <PaymentSheet
-        ref={paymentSheetRef}
-        isVisible={isPaymentSheetVisible}
-        onClose={handlePaymentClose}
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentError={handlePaymentError}
-      />
-    </>
+        {paymentMessages.length === 0 ? (
+          <ThemedView style={styles.emptyState}>
+            <ThemedText style={styles.emptyStateText}>
+              No payment messages yet. Tap &quot;Pay Now&quot; to start.
+            </ThemedText>
+          </ThemedView>
+        ) : (
+          <FlatList
+            data={paymentMessages}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            scrollEnabled={false}
+            renderItem={({ item: msg }) => (
+              <ThemedView
+                style={[styles.messageItem, getMessageStyle(msg.type)]}
+              >
+                <ThemedView style={styles.messageHeader}>
+                  <ThemedText
+                    style={[styles.messageType, getMessageTypeStyle(msg.type)]}
+                  >
+                    {msg.type.toUpperCase()}
+                  </ThemedText>
+                  <ThemedText style={styles.messageTime}>
+                    {formatTime(msg.timestamp)}
+                  </ThemedText>
+                </ThemedView>
+                <ThemedText style={styles.messageText}>
+                  {msg.message}
+                </ThemedText>
+                {msg.data && (
+                  <ThemedText style={styles.messageData}>
+                    {JSON.stringify(msg.data, null, 2)}
+                  </ThemedText>
+                )}
+              </ThemedView>
+            )}
+          />
+        )}
+      </ThemedView>
+    </ParallaxScrollView>
   );
 }
 
@@ -205,7 +140,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   payButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#008BCD",
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 8,
@@ -222,21 +157,15 @@ const styles = StyleSheet.create({
   },
   logContainer: {
     marginTop: 20,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    backgroundColor: "#f0f0f0", // Light background for messages
+    paddingVertical: 20,
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
   logHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 10,
+    paddingHorizontal: 20,
   },
   logTitle: {
     fontSize: 18,
@@ -245,7 +174,7 @@ const styles = StyleSheet.create({
   clearButton: {
     paddingHorizontal: 10,
     paddingVertical: 5,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#008BCD",
     borderRadius: 5,
   },
   clearButtonText: {
@@ -256,17 +185,15 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: "center",
     paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   emptyStateText: {
     color: "#888",
     fontSize: 16,
   },
-  messagesList: {
-    maxHeight: 200, // Limit height for scrolling
-  },
   messageItem: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
   },
@@ -278,7 +205,7 @@ const styles = StyleSheet.create({
   messageType: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#007AFF", // Info color
+    color: "#008BCD",
   },
   messageTime: {
     fontSize: 12,
@@ -294,21 +221,21 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   messageSuccess: {
-    borderBottomColor: "#4CAF50", // Green for success
+    borderBottomColor: "#4CAF50",
   },
   messageError: {
-    borderBottomColor: "#F44336", // Red for error
+    borderBottomColor: "#F44336",
   },
   messageInfo: {
-    borderBottomColor: "#2196F3", // Blue for info
+    borderBottomColor: "#008BCD",
   },
   messageTypeSuccess: {
-    color: "#4CAF50", // Green for success
+    color: "#4CAF50",
   },
   messageTypeError: {
-    color: "#F44336", // Red for error
+    color: "#F44336",
   },
   messageTypeInfo: {
-    color: "#2196F3", // Blue for info
+    color: "#008BCD",
   },
 });
