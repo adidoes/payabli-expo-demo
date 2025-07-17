@@ -63,11 +63,7 @@ export function PaymentSheetProvider({
 
   const onPaymentSuccess = (data: any) => {
     addPaymentMessage("success", data.message || "Payment successful!", data);
-    Alert.alert(
-      "Payment Successful!",
-      `Transaction ID: ${data.transactionId || "N/A"}`,
-      [{ text: "OK" }]
-    );
+    Alert.alert("Result", "Payment successful!", [{ text: "OK" }]);
     setIsVisible(false);
   };
 
